@@ -299,14 +299,14 @@ body {
 
 .icon-link {
   position: relative;
-  color: #a61f9f;
+  color: #007bff;
   font-size: 1.5rem;
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .icon-link:hover {
   transform: scale(1.2);
-  color: #007bff;
+  color: #a61f9f;
 }
 
 /* Optional custom tooltip */
