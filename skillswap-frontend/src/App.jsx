@@ -11,9 +11,11 @@ function App() {
   const [name, setName] = useState("");
   const [teach, setTeach] = useState("");
   const [learn, setLearn] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [registered, setRegistered] = useState(false);
   const [page, setPage] = useState("home");
+
 
 
   // Connect wallet and load contract
@@ -30,15 +32,34 @@ function App() {
     }
   };
 
-  // Load users from blockchain
+  // Load users from blockchain and set current user details
   const loadUsers = async () => {
-    if (contract) {
-      const allUsers = await contract.getAllUsers();
-      setUsers(allUsers);
-      const isRegistered = await contract.registered(account);
-      setRegistered(isRegistered);
+  if (contract && account) {
+    const allUsers = await contract.getAllUsers();
+    setUsers(allUsers);
+
+    const isRegistered = await contract.registered(account);
+    setRegistered(isRegistered);
+
+    if (isRegistered) {
+      // Find the logged-in user's data from allUsers
+      const current = allUsers.find(
+        (u) => u.wallet.toLowerCase() === account.toLowerCase()
+      );
+
+      if (current) {
+        setCurrentUser({
+          name: current.name,
+          skillToTeach: current.skillToTeach,
+          skillToLearn: current.skillToLearn,
+          wallet: current.wallet,
+          email: current.email || ""
+        });
+      }
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     if (contract && account) {
@@ -51,9 +72,23 @@ function App() {
     e.preventDefault();
     const tx = await contract.registerUser(name, teach, learn);
     await tx.wait();
+    setCurrentUser({ name, skillToTeach, skillToLearn, wallet: address });
     alert("Registration successful!");
-    loadUsers();
+    await loadUsers();
   };
+
+  const findMatches = () => {
+    if (!currentUser || users.length === 0) return [];
+
+    return users.filter(
+      (u) =>
+        u.wallet.toLowerCase() !== currentUser.wallet.toLowerCase() && // not yourself
+        u.skillToTeach.toLowerCase() === currentUser.skillToLearn.toLowerCase() &&
+        u.skillToLearn.toLowerCase() === currentUser.skillToTeach.toLowerCase()
+    );
+  };
+
+  const matchedUsers = findMatches();
 
   return (
     <div className="app-container">
@@ -126,8 +161,30 @@ function App() {
 
           {page === "match" && (
             <div className="match-section">
-              <h2>🤝 Match Users</h2>
-              {/* You’ll add the dropdown + button here next */}
+              {/* Match Section */}
+              <div className="match-section">
+                <h2>🔗 Skill Matches</h2>
+
+                {matchedUsers.length > 0 ? (
+                  matchedUsers.map((m, i) => (
+                    <div key={i} className="match-card">
+                      <h3>{m.name}</h3>
+                      <p>🎓 Can teach: {m.skillToTeach}</p>
+                      <p>📘 Wants to learn: {m.skillToLearn}</p>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => window.open(`mailto:${m.email || ''}`)}
+                      >
+                        Connect
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-match">😔 We couldn’t find anyone for you yet. Check back soon!</p>
+                )}
+              </div>
+
+
             </div>
           )}
 
@@ -143,7 +200,7 @@ function App() {
               className={page === "match" ? "active" : ""}
               onClick={() => setPage("match")}
             >
-              🤝 Get A match
+              🤝 Get A Match
             </button>
           </nav>
         </>
