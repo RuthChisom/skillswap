@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import SkillSwap from "./abi/SkillSwap.json";
-import "./App.css"; // Add this for styling
+import "./App.css";
+import { FaTwitter, FaEnvelope } from "react-icons/fa";
+import { SiFarcaster } from "react-icons/si";
+
 
 const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
@@ -164,23 +167,60 @@ function App() {
               {/* Match Section */}
               <div className="match-section">
                 <h2>🔗 Skill Matches</h2>
-
                 {matchedUsers.length > 0 ? (
-                  matchedUsers.map((m, i) => (
-                    <div key={i} className="match-card">
-                      <h3>{m.name}</h3>
-                      <p>🎓 Can teach: {m.skillToTeach}</p>
-                      <p>📘 Wants to learn: {m.skillToLearn}</p>
-                      <button
-                        className="btn-secondary"
-                        onClick={() => window.open(`mailto:${m.email || ''}`)}
-                      >
-                        Connect
-                      </button>
+                  <>
+                    <p className="match-intro">
+                      Here’s a list of amazing people interested in teaching you
+                      <strong> {currentUser.skillToLearn}</strong> while learning
+                      <strong> {currentUser.skillToTeach}</strong> from you.  
+                      Feel free to connect and begin your learning journey at no cost ✨
+                    </p>
+
+                    <div className="match-list">
+                      {matchedUsers.map((m, i) => (
+                        <div key={i} className="match-item">
+                          <span className="match-name">{m.name}</span>
+                          <div className="connect-icons">
+                            {/* {m.email && ( */}
+                              <a 
+                                href={`mailto:${m.email}`} 
+                                className="icon-link"
+                                title="Email"
+                              >
+                                <FaEnvelope />
+                              </a>
+                            {/* )} */}
+                            {/* {m.twitter && ( */}
+                              <a
+                                href={`https://twitter.com/${m.twitter}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="icon-link"
+                                title="Twitter"
+                              >
+                                <FaTwitter />
+                              </a>
+                            {/* )} */}
+                            {/* {m.farcaster && ( */}
+                              <a
+                                href={`https://warpcast.com/${m.farcaster}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="icon-link"
+                                title="Farcaster"
+                              >
+                                <SiFarcaster />
+                              </a>
+                            {/* )} */}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
+                  </>
                 ) : (
-                  <p className="no-match">😔 We couldn’t find anyone for you yet. Check back soon!</p>
+                  <p className="no-match">
+                    😔 We couldn’t find anyone for you yet. Check back soon — your ideal learning partner might be registering right now!
+                  </p>
                 )}
               </div>
 
@@ -188,21 +228,23 @@ function App() {
             </div>
           )}
 
+          {registered && (
+            <nav className="nav">
+              <button
+                className={page === "home" ? "active" : ""}
+                onClick={() => setPage("home")}
+              >
+                🏠 Home
+              </button>
+              <button
+                className={page === "match" ? "active" : ""}
+                onClick={() => setPage("match")}
+              >
+                🤝 Get A Match
+              </button>
+            </nav>
+          )}
 
-          <nav className="nav">
-            <button
-              className={page === "home" ? "active" : ""}
-              onClick={() => setPage("home")}
-            >
-              🏠 Home
-            </button>
-            <button
-              className={page === "match" ? "active" : ""}
-              onClick={() => setPage("match")}
-            >
-              🤝 Get A Match
-            </button>
-          </nav>
         </>
         
       )}
