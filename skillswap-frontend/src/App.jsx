@@ -1,62 +1,126 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import abiFile from "./abi/SkillSwap.json";
-import ConnectWallet from "./components/ConnectWallet";
-import RegisterForm from "./components/RegisterForm";
-import UserList from "./components/UserList";
+import SkillSwap from "./abi/SkillSwap.json";
+import "./App.css"; // Add this for styling
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 function App() {
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [name, setName] = useState("");
+  const [teach, setTeach] = useState("");
+  const [learn, setLearn] = useState("");
+  const [users, setUsers] = useState([]);
+  const [registered, setRegistered] = useState(false);
 
-  async function connectWallet() {
-    if (!window.ethereum) {
-      alert("MetaMask not detected!");
-      return;
+  // Connect wallet and load contract
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const skillSwap = new ethers.Contract(contractAddress, SkillSwap.abi, signer);
+      setAccount(accounts[0]);
+      setContract(skillSwap);
+    } else {
+      alert("Please install MetaMask to use this app!");
     }
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    const accounts = await provider.listAccounts();
-    const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, abiFile.abi, signer);
-    setAccount(accounts[0].address || accounts[0]);
-    setContract(contractInstance);
-  }
+  };
 
-  // Check registration status
-  async function checkRegistration() {
-    if (!contract || !account) return;
-    try {
-      const registered = await contract.registered(account);
-      setIsRegistered(registered);
-    } catch (err) {
-      console.error("Error checking registration:", err);
+  // Load users from blockchain
+  const loadUsers = async () => {
+    if (contract) {
+      const allUsers = await contract.getAllUsers();
+      setUsers(allUsers);
+      const isRegistered = await contract.registered(account);
+      setRegistered(isRegistered);
     }
-  }
+  };
 
   useEffect(() => {
-    checkRegistration();
+    if (contract && account) {
+      loadUsers();
+    }
   }, [contract, account]);
 
+  // Register new user
+  const registerUser = async (e) => {
+    e.preventDefault();
+    const tx = await contract.registerUser(name, teach, learn);
+    await tx.wait();
+    alert("Registration successful!");
+    loadUsers();
+  };
+
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h1>SkillSwap</h1>
+    <div className="app-container">
+      <h1 className="title">⚡ SkillSwap</h1>
+      <p className="subtitle">Find and exchange skills directly onchain</p>
+
       {!account ? (
-        <ConnectWallet connect={connectWallet} />
+        <button onClick={connectWallet} className="btn-primary">
+          Connect Wallet
+        </button>
       ) : (
         <>
-          <p>Connected as {account}</p>
+          <p className="account">Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
 
-          {!isRegistered ? (
-            <RegisterForm contract={contract} onRegistered={() => setIsRegistered(true)} />
-          ) : (
-            <p style={{ color: "green" }}>✅ You’re already registered!</p>
+          {!registered && (
+            <form className="form-card" onSubmit={registerUser}>
+              <input
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <input
+                placeholder="Skill you can teach"
+                value={teach}
+                onChange={(e) => setTeach(e.target.value)}
+                required
+              />
+              <input
+                placeholder="Skill you want to learn"
+                value={learn}
+                onChange={(e) => setLearn(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn-primary">
+                Register
+              </button>
+            </form>
           )}
 
-          <UserList contract={contract} account={account} />
+          <h2 className="section-title">👥 Registered Users</h2>
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Skills</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length > 0 ? (
+                  users.map((u, i) => (
+                    <tr key={i}>
+                      <td className="skill-cell">{u.name}</td>
+                      <td>
+                        <div className="skill-cell">
+                          <p>🎓 <strong>Teaches:</strong> {u.skillToTeach}</p>
+                          <p>📘 <strong>Learning:</strong> {u.skillToLearn}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="2">No users yet</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
         </>
       )}
     </div>
