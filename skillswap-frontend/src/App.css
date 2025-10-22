@@ -121,6 +121,36 @@ body {
   font-size: 0.95rem;
 }
 
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.nav button {
+  background: #eef2ff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.nav button {
+  background: #c7d2fe;
+}
+
+.nav button:hover {
+  background: #4b5065;
+}
+
+.nav button.active {
+  background: #4f46e5;
+  color: #fff;
+}
+
 
 /* Responsive table for smaller screens */
 @media (max-width: 640px) {
