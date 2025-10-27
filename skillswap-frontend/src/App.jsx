@@ -59,6 +59,15 @@ const getCachedProfile = (wallet) => {
   return cache[wallet?.toLowerCase()] || null;
 };
 
+function decodeSkill(skill) {
+  try { 
+    return ethers.decodeBytes32String(skill) 
+  } 
+  catch { 
+    return skill // fallback if already plain text
+  }
+}
+
 /**
  * App component
  */
@@ -135,8 +144,9 @@ function App() {
             email: u.socials?.email || "",
           },
           // readable skills if we have them cached from this frontend
-          teachReadable: cached?.teach || null,
-          learnReadable: cached?.learn || null,
+          // teachReadable: cached?.teach || null,
+          teachReadable: decodeSkill(cached?.teach || null),
+          learnReadable: decodeSkill(cached?.learn || null),
         };
       });
       setDisplayUsers(decorated);
